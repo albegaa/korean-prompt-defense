@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Environment
+.env
+.env.*
+
+# Data
+data/
+datasets/
+
+# Models / checkpoints
+models/
+checkpoints/
+*.pt
+*.pth
+*.bin
+*.safetensors
+
+# Experiment outputs
+results/
+outputs/
+logs/
+
+# Cache
+.cache/
+huggingface/
