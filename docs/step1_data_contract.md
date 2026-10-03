@@ -101,7 +101,8 @@ Benign length matching
 - fixed random seed를 사용한다.
 - test 공격은 train에서 유사한 표현을 본 적 없는 공격으로 구성된다.
 
-train의 xTRam1 정상 데이터에는 길이 분포 보정을 위한 `_dup1` 복제 행 373건이 포함된다.
+train의 xTRam1 정상 데이터는 길이 보정 전 1,630건에서 구간별 조정 후 최종 1,616건으로 맞췄다.
+최종 구성은 원본 1,243건 + `_dup1` 복제 행 373건이며, xTRam1 공격 1,616건과 동일한 수다.
 
 valid / test에는 이 길이 보정을 적용하지 않는다.
 
