@@ -2,18 +2,23 @@
 
 ## 1. 기본 파일
 
-Step 1에서 사용하는 기본 원본 파일은 다음과 같다.
+Step 1에서 사용하는 기본 파일은 다음과 같다.
 
 - `train.jsonl`
 - `valid.jsonl`
 - `test.jsonl`
 - `kg_test.jsonl`
+- `kg_test_meta.jsonl`
 
-목표 규모:
+최종 전달 규모:
 
-- Attack 약 3,000건
-- Benign 약 3,000건
-- Attack : Benign = 1 : 1
+- `train.jsonl`: 4,809건 (Attack 2,401 / Benign 2,408)
+- `valid.jsonl`: 604건 (Attack 300 / Benign 304)
+- `test.jsonl`: 604건 (Attack 300 / Benign 304)
+- `kg_test.jsonl`: 172건 (Attack 108 / Benign 64)
+
+train에는 xTRam1 길이 보정을 위한 `_dup1` 복제 행 373건이 포함된다.
+이 행들은 오류가 아니라 train 내부 길이 분포 보정을 위해 의도적으로 추가된 데이터이다.
 
 ---
 
@@ -53,15 +58,14 @@ Step 1에서 사용하는 기본 원본 파일은 다음과 같다.
 - hh-rlhf helpful-base
 - prompts.chat
 
-초기 후보였던 `deepset/prompt-injections`는
-다른 데이터와 label 기준이 충돌하여 제외한다.
+`deepset/prompt-injections`는 다른 데이터와 label 기준이 충돌하여 제외한다.
 
-xTRam1 benign도 정상 후보에 포함하여
+xTRam1 benign도 정상 데이터에 포함하여
 Attack과 Benign의 source가 완전히 분리되는 것을 줄인다.
 
 ---
 
-## 4. 원본 데이터 정리
+## 4. 원본 데이터 정리 및 분할
 
 원본 데이터셋이 제공하는 split은 그대로 사용하지 않는다.
 
@@ -87,12 +91,19 @@ Benign length matching
 8 : 1 : 1
 ```
 
-원칙:
+분할 원칙:
 
-- split별 Attack : Benign 비율 유지
-- fixed random seed 사용
-- augmentation 전에 원문 단위로 split
-- 동일 원문이 train / valid / test에 동시에 포함되지 않음
+- 공격 문장은 영어 원문 단어 Jaccard 유사도 0.6 이상이면 같은 group으로 묶는다.
+- 같은 공격 group은 train / valid / test 중 한 split에만 들어간다.
+- 30건 이상인 큰 공격 group은 train에 고정한다.
+- `(label, source)` 조합별로 train : valid : test = 8 : 1 : 1이 되도록 층화한다.
+- augmentation 전에 split한다.
+- fixed random seed를 사용한다.
+- test 공격은 train에서 유사한 표현을 본 적 없는 공격으로 구성된다.
+
+train의 xTRam1 정상 데이터에는 길이 분포 보정을 위한 `_dup1` 복제 행 373건이 포함된다.
+
+valid / test에는 이 길이 보정을 적용하지 않는다.
 
 ---
 
@@ -119,20 +130,23 @@ max_length = 128
 
 을 사용한다.
 
-KoELECTRA와 mDeBERTa tokenizer 모두
-`truncation_side=right`임을 확인하였다.
+KoELECTRA와 mDeBERTa tokenizer 모두 `truncation_side=right`임을 확인하였다.
 
-따라서 128 token을 초과하면 입력의 뒤쪽이 잘린다.
+따라서 128 token을 초과하면 입력 뒤쪽이 잘린다.
 
-최종 데이터 수신 후 실제 tokenizer 기준으로
-128 token 초과 비율을 별도로 측정한다.
+최종 원본 데이터 6,031건의 실제 token 길이를 확인한 결과:
 
-확인 대상:
+- KoELECTRA: 128 token 초과 0 / 6,031건
+- mDeBERTa: 128 token 초과 5 / 6,031건 (0.08%)
+- `kg_test` 172건: 두 tokenizer 모두 128 token 초과 0건
 
-- train
-- valid
-- test
-- kg_test
+mDeBERTa의 5건도 잘리는 부분은 문장 끝 일부이며,
+공격 지시는 앞쪽에 남아 있는 것으로 확인되었다.
+
+따라서 Step 1의 `max_length=128` 설정은 유지한다.
+
+추후 증강 및 난독화 데이터가 전달되면 다음 파일도 동일하게 token 길이를 확인한다.
+
 - augmented train
 - obfuscated test
 - obfuscated KG test
@@ -144,7 +158,7 @@ KoELECTRA와 mDeBERTa tokenizer 모두
 Benign 데이터는 후보 전체에서 단순 random sampling하지 않는다.
 
 Attack의 길이 분포를 기준으로 길이 구간별로 대응되도록 추출하고,
-최종적으로 Attack과 Benign을 1 : 1로 구성한다.
+최종적으로 Attack과 Benign을 약 1 : 1로 구성한다.
 
 목적은 모델이 입력 길이를 label shortcut으로 학습하는 가능성을 줄이기 위함이다.
 
@@ -152,29 +166,23 @@ Attack의 길이 분포를 기준으로 길이 구간별로 대응되도록 추�
 
 ## 7. 번역 관련 기록
 
-최종 데이터 카드에는
-train / valid / test 각각의 번역 여부 분포를 기록한다.
+최종 데이터의 번역 구성은 다음과 같다.
 
-최소 확인 항목:
+Attack:
 
-- split별 translated / non-translated 비율
-- label별 translated / non-translated 비율
+- train / valid / test의 공격 문장은 모두 영어 원문을 한국어로 번역한 문장
 
-예:
+Benign:
 
-```text
-train Attack translated %
-train Benign translated %
+| Split | 번역 | KoAlpaca 한국어 원본 |
+| --- | ---: | ---: |
+| train | 2,157 (89.1%) | 265 (10.9%) |
+| valid | 271 (89.1%) | 33 (10.9%) |
+| test | 271 (89.1%) | 33 (10.9%) |
 
-valid Attack translated %
-valid Benign translated %
+공격은 모두 번역문이므로 classifier가 공격 특성 대신 번역투를 shortcut으로 사용할 가능성이 남아 있다.
 
-test Attack translated %
-test Benign translated %
-```
-
-이는 classifier가 공격 특성 대신 번역 문체를
-shortcut으로 학습했는지 해석할 때 사용한다.
+이를 보조적으로 확인하기 위해 KoreanGuardrail 평가를 별도로 수행한다.
 
 KoreanGuardrail은 "한국어 원본"이라고 표현하지 않고
 
@@ -190,13 +198,19 @@ KoreanGuardrail은 "한국어 원본"이라고 표현하지 않고
 
 `kg_test.jsonl`은 메인 test와 섞지 않고 별도로 평가한다.
 
-현재 구성:
+최종 구성:
 
-- 전체 시드 249건
-- screening에 사용한 70건 제외
-- 최종 179건
-- A1 / A2 → label 1
+- `kg_test.jsonl`: 172건
+- Attack: 108건
+- Benign: 64건
+- 전체 KG 후보 249건에서 screening 시드 70건과 외국어 공격 E2 7건 제외
+- A1 / A2 등 공격 → label 1
 - Benign → label 0
+
+채점에는 반드시 `kg_test.jsonl`의 `label`을 사용한다.
+
+`kg_test_meta.jsonl`은 KG 원본 category / subtype 등 참고용 metadata이며,
+그 안의 `kg_label`은 Step 1 classifier 채점에 사용하지 않는다.
 
 KoreanGuardrail은 Claude 생성 후 검수된 데이터이므로
 자연발생 한국어 원본 데이터로 표현하지 않는다.
@@ -205,8 +219,7 @@ KoreanGuardrail은 Claude 생성 후 검수된 데이터이므로
 
 ## 9. Variant metadata
 
-난독화 평가 및 증강 데이터에는
-기본 필드 외에 다음 metadata가 추가된다.
+난독화 평가 및 증강 데이터에는 기본 필드 외에 다음 metadata가 추가된다.
 
 | Field | 의미 |
 | --- | --- |
@@ -238,18 +251,11 @@ original.id == variant.seed_id
 - transformation 적용 여부 검산
 - raw artifact 보존
 
-난독화 robustness의 주 성능은
-
-```text
-changed=true
-```
-
-행을 기준으로 계산한다.
+난독화 robustness의 주 성능은 `changed=true` 행을 기준으로 계산한다.
 
 ### Augmented training
 
-`changed=false` variant는
-원문과 동일한 no-op duplicate이므로
+`changed=false` variant는 원문과 동일한 no-op duplicate이므로
 증강 학습 데이터에서 제외한다.
 
 ---
@@ -261,8 +267,7 @@ Step 1 증강 후보:
 - `yamin_swap`, intensity `0.7`
 - `symbol_insert`, intensity `0.3`
 
-두 조건은 screening에서 pass한 기법이 아니라
-ambiguous fallback 조건이다.
+두 조건은 screening에서 pass한 기법이 아니라 ambiguous fallback 조건이다.
 
 증강은 train split에만 적용한다.
 
@@ -296,12 +301,32 @@ seed_id
 
 또한 split 전에 exact duplicate를 제거한다.
 
+train의 `_dup1` 행은 길이 보정을 위해 의도적으로 만든 train-only 복제이므로
+일반 duplicate 오류와 구분한다.
+
 ---
 
-## 13. 데이터 공개 주의
+## 13. 추가 평가 시 주의
 
-라이선스 또는 재배포 제한이 있는 원본 데이터는 Git에 commit하지 않는다.
+valid / test의 xTRam1 공격-정상 길이 분포 차이가 일부 남아 있다.
 
-특히 xTRam1 원본 데이터는 공용 저장소에 직접 업로드하지 않는다.
+따라서 최종 test 결과에서는 `source == "xtram1"`인 행을 text 길이 기준으로 나누어
+구간별 Attack Recall과 Benign FPR도 확인한다.
+
+권장 구간:
+
+- 0~40자
+- 40~55자
+- 55~70자
+- 70자 이상
+
+---
+
+## 14. 데이터 공개 주의
+
+xTRam1은 라이선스가 명시되지 않아 팀 내부 실험용으로만 사용하고 외부 배포하지 않는다.
+
+따라서 xTRam1이 포함된 원본 데이터 및 최종 Step 1 데이터 파일은
+공용 Git 저장소에 직접 commit하지 않는다.
 
 실제 데이터 공개 여부는 각 원본 데이터의 라이선스 및 사용 조건을 별도로 확인한다.
