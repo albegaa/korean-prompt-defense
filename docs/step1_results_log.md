@@ -84,3 +84,21 @@ Outputs:
 - [ ] KoreanGuardrail supplementary evaluation
 
 Augmented training data and 17-technique obfuscated evaluation data are pending delivery.
+
+### 5. xTRam1 length-bin analysis
+
+KoELECTRA Original clean-test predictions에서 `source == "xtram1"`인 행만 사용하여
+문자 길이 기준 4개 구간으로 나누어 Attack Recall과 Benign FPR을 확인하였다.
+
+| Length bin | N | Attack N | Benign N | Attack Recall | Benign FPR |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 0~40 | 84 | 36 | 48 | 1.0000 | 0.0208 |
+| 40~55 | 125 | 84 | 41 | 1.0000 | 0.0000 |
+| 55~70 | 86 | 39 | 47 | 1.0000 | 0.0000 |
+| 70+ | 112 | 44 | 68 | 0.9773 | 0.0000 |
+
+KoELECTRA Original clean test에서는 길이 구간에 따른 큰 성능 차이는 관찰되지 않았다.
+가장 긴 70+ 구간에서 공격 44건 중 1건을 놓쳤고,
+가장 짧은 0~40 구간에서 정상 48건 중 1건을 오탐하였다.
+
+최종 비교에서는 KoELECTRA Augmented와 mDeBERTa 결과에도 동일 분석을 적용한다.
