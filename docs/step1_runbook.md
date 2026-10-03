@@ -286,7 +286,29 @@ results/step1/
 
 ---
 
-## 8. 추가 통계 분석
+## 8. 길이 구간별 성능 확인
+
+최종 test에서는 `source == "xtram1"`인 행을 대상으로
+text 길이에 따른 성능 차이도 확인한다.
+
+구간:
+
+- 0~40자
+- 40~55자
+- 55~70자
+- 70자 이상
+
+각 구간에서 다음을 계산한다.
+
+- Attack Recall
+- Benign FPR
+
+valid / test의 xTRam1 공격·정상 길이 분포 차이가 일부 남아 있으므로,
+구간별 성능 차이가 큰 경우 모델이 입력 길이에 의존하는지 함께 해석한다.
+
+---
+
+## 9. 추가 통계 분석
 
 추가 통계는 각 평가의 `predictions.csv`를 사용한다.
 
@@ -302,10 +324,11 @@ results/step1/
 
 ---
 
-## 9. 실험 완료 체크
+## 10. 실험 완료 체크
 
 - [ ] 데이터 validator 통과
 - [ ] 데이터 분포 / token 길이 확인
+- [ ] xTRam1 길이 구간별 Recall / FPR 확인
 - [ ] KoELECTRA Original 학습
 - [ ] mDeBERTa Original 학습
 - [ ] KoELECTRA Augmented 학습
