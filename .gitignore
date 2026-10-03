@@ -34,3 +34,9 @@ logs/
 # Cache
 .cache/
 huggingface/
+
+# Local backup files
+*.bak
+
+# Private Step 1 data archives
+/step1_data_v1_*.tar.gz
