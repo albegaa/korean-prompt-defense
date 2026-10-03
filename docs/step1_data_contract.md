@@ -134,10 +134,16 @@ KoELECTRA와 mDeBERTa tokenizer 모두 `truncation_side=right`임을 확인하�
 
 따라서 128 token을 초과하면 입력 뒤쪽이 잘린다.
 
-최종 원본 데이터 6,031건의 실제 token 길이를 확인한 결과:
+실제 전달된 train / valid / test 6,017건의 token 길이를 확인한 결과:
 
-- KoELECTRA: 128 token 초과 0 / 6,031건
-- mDeBERTa: 128 token 초과 5 / 6,031건 (0.08%)
+- KoELECTRA: 128 token 초과 0 / 6,017건
+  - train 0 / 4,809
+  - valid 0 / 604
+  - test 0 / 604
+- mDeBERTa: 128 token 초과 5 / 6,017건 (0.0831%)
+  - train 4 / 4,809
+  - valid 1 / 604
+  - test 0 / 604
 - `kg_test` 172건: 두 tokenizer 모두 128 token 초과 0건
 
 mDeBERTa의 5건도 잘리는 부분은 문장 끝 일부이며,
