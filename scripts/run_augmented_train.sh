@@ -51,6 +51,10 @@ case "$MODEL_KEY" in
         ;;
 esac
 
+if [ "$SEED" != "42" ]; then
+    OUTPUT_DIR="results/step1_seeds/${MODEL_KEY}/seed${SEED}/augmented"
+fi
+
 for FILE in \
     "$ORIGINAL_TRAIN" \
     "$AUGMENTED_INPUT" \

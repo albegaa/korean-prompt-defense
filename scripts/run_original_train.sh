@@ -46,6 +46,10 @@ case "$MODEL_KEY" in
         ;;
 esac
 
+if [ "$SEED" != "42" ]; then
+    OUTPUT_DIR="results/step1_seeds/${MODEL_KEY}/seed${SEED}/original"
+fi
+
 if [ ! -f "$TRAIN_FILE" ]; then
     echo "Train file not found: $TRAIN_FILE"
     exit 1

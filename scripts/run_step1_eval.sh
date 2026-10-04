@@ -33,6 +33,7 @@ BATCH_SIZE="${6:-32}"
 
 PYTHON="${PYTHON:-python}"
 MAX_LENGTH="${MAX_LENGTH:-128}"
+SEED="${SEED:-42}"
 
 case "$MODEL_KEY" in
     koelectra)
@@ -73,8 +74,13 @@ if [ ! -f "$INPUT_FILE" ]; then
     exit 1
 fi
 
-MODEL_DIR="results/step1/${MODEL_KEY}/${TRAINING_TYPE}/best_model"
-OUTPUT_DIR="results/step1/${MODEL_KEY}/${TRAINING_TYPE}/eval/${EVAL_NAME}"
+if [ "$SEED" = "42" ]; then
+    MODEL_DIR="results/step1/${MODEL_KEY}/${TRAINING_TYPE}/best_model"
+    OUTPUT_DIR="results/step1/${MODEL_KEY}/${TRAINING_TYPE}/eval/${EVAL_NAME}"
+else
+    MODEL_DIR="results/step1_seeds/${MODEL_KEY}/seed${SEED}/${TRAINING_TYPE}/best_model"
+    OUTPUT_DIR="results/step1_seeds/${MODEL_KEY}/seed${SEED}/${TRAINING_TYPE}/eval/${EVAL_NAME}"
+fi
 
 if [ ! -d "$MODEL_DIR" ]; then
     echo "Fine-tuned model directory not found:"
@@ -94,6 +100,7 @@ echo "output          : $OUTPUT_DIR"
 echo "gpu             : $GPU"
 echo "batch size      : $BATCH_SIZE"
 echo "max length      : $MAX_LENGTH"
+echo "seed            : $SEED"
 echo
 
 CUDA_VISIBLE_DEVICES="$GPU" \
