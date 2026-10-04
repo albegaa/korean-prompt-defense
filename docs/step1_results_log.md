@@ -77,13 +77,13 @@ Outputs:
 
 - [x] KoELECTRA Original-only training
 - [x] KoELECTRA Original clean test
-- [ ] KoELECTRA Augmented training
+- [x] KoELECTRA Augmented training
 - [ ] KoELECTRA Original obfuscated test
 - [ ] KoELECTRA Augmented clean test
 - [ ] KoELECTRA Augmented obfuscated test
 - [ ] KoreanGuardrail supplementary evaluation
 
-Augmented training data and 17-technique obfuscated evaluation data are pending delivery.
+Augmented training data and 17-technique obfuscated evaluation data were delivered on 2026-10-04 and passed the Step 1 data validator.
 
 ### 5. xTRam1 length-bin analysis
 
@@ -102,3 +102,92 @@ KoELECTRA Original clean test에서는 길이 구간에 따른 큰 성능 차이
 가장 짧은 0~40 구간에서 정상 48건 중 1건을 오탐하였다.
 
 최종 비교에서는 KoELECTRA Augmented와 mDeBERTa 결과에도 동일 분석을 적용한다.
+
+---
+
+## 2026-10-04 — KoELECTRA Augmented
+
+### 1. Training configuration
+
+- Model: `monologg/koelectra-base-v3-discriminator`
+- Training: Augmented
+- Original train: `data/step1/train.jsonl`
+- Augmented input: `data/step1/augmented_train.jsonl`
+- Validation: `data/step1/valid.jsonl`
+- Final train rows: 14,377
+- Original rows: 4,809
+- Variant rows: 9,568
+- Benign: 7,200
+- Attack: 7,177
+- Augmentation cells:
+  - `yamin_swap`, intensity 0.7: 4,759 rows
+  - `symbol_insert`, intensity 0.3: 4,809 rows
+- Epochs: 3
+- Batch size: 16
+- Learning rate: 2e-5
+- Weight decay: 0.01
+- Max length: 128
+- Seed: 42
+- FP16: enabled
+- Best-model selection: validation F1
+
+The delivered `augmented_train.jsonl` already contains the original 4,809 training rows.
+`prepare_augmented_train.py` detected the input as `combined` mode and used 14,377 rows without duplicating the original rows.
+
+### 2. Validation result
+
+Best epoch: 1
+
+| Metric | Result |
+| --- | ---: |
+| Accuracy | 0.9917 |
+| Precision | 0.9868 |
+| Attack Recall | 0.9967 |
+| F1 | 0.9917 |
+| Benign FPR | 0.0132 |
+| FNR | 0.0033 |
+| TP | 299 |
+| TN | 300 |
+| FP | 4 |
+| FN | 1 |
+| Validation loss | 0.0363 |
+
+Saved model:
+
+`results/step1/koelectra/augmented/best_model`
+
+Training outputs:
+
+- `results/step1/koelectra/augmented/validation_results.csv`
+- `results/step1/koelectra/augmented/metrics.json`
+- `results/step1/koelectra/augmented/training_history.csv`
+- `results/step1/koelectra/augmented/best_model`
+
+### 3. Training history
+
+| Epoch | Train loss | Accuracy | Precision | Attack Recall | F1 | Benign FPR | FNR | Validation loss |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 1 | 0.1012 | 0.9917 | 0.9868 | 0.9967 | 0.9917 | 0.0132 | 0.0033 | 0.0363 |
+| 2 | 0.0216 | 0.9801 | 0.9645 | 0.9967 | 0.9803 | 0.0362 | 0.0033 | 0.0816 |
+| 3 | 0.0115 | 0.9851 | 0.9866 | 0.9833 | 0.9850 | 0.0132 | 0.0167 | 0.0558 |
+
+### 4. Comparison with Original-only validation
+
+| Training | Best epoch | Accuracy | Attack Recall | F1 | Benign FPR |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Original-only | 3 | 0.9868 | 0.9933 | 0.9868 | 0.0197 |
+| Augmented | 1 | 0.9917 | 0.9967 | 0.9917 | 0.0132 |
+
+On the clean validation set, the Augmented model showed slightly higher F1 and lower benign FPR than the Original-only model.
+
+This validation result alone does not establish robustness to obfuscation.
+The main comparison requires evaluation on the clean and 17-technique obfuscated test sets.
+
+### 5. Next evaluation
+
+- [ ] KoELECTRA Original obfuscated test
+- [ ] KoELECTRA Augmented clean test
+- [ ] KoELECTRA Augmented obfuscated test
+- [ ] KoELECTRA Original/Augmented KoreanGuardrail evaluation
+- [ ] Original vs Augmented paired/statistical comparison
+
