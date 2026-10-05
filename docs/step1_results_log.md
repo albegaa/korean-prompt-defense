@@ -288,7 +288,48 @@ seed 42 and the three-seed statistics, including AUROC, are available.
 - [ ] Seed 42 remaining seven evaluations
 - [ ] Three-seed mean and standard deviation
 - [ ] AUROC aggregation
-- [ ] Technique/group-level comparison
+- [ ] Final three-seed technique/group-level comparison
 - [ ] Final Step 1 comparison table
 
 Raw data, model checkpoints, and prediction-level outputs are not committed to the repository.
+
+### 7. Technique-group interim analysis (seeds 43/44)
+
+To check whether the augmentation effect is limited to the training cells,
+the `obfuscated_test` rows with `changed=true` were divided into three groups:
+
+- trained technique, same intensity:
+  - `yamin_swap 0.7`
+  - `symbol_insert 0.3`
+- same technique, different intensity:
+  - `yamin_swap 0.3`
+  - `symbol_insert 0.7`
+- unseen techniques:
+  - the remaining 15 techniques
+
+| Seed | Group | Original Recall | Augmented Recall | ΔRecall | Original FPR | Augmented FPR | ΔFPR |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| 43 | trained / same intensity | 86.29% | 97.66% | +11.37 pp | 0.50% | 1.32% | +0.83 pp |
+| 43 | same technique / other intensity | 57.80% | 93.73% | +35.93 pp | 0.67% | 2.68% | +2.01 pp |
+| 43 | unseen 15 techniques | 71.75% | 89.29% | +17.54 pp | 0.66% | 1.11% | +0.45 pp |
+| 44 | trained / same intensity | 92.31% | 97.49% | +5.18 pp | 1.82% | 0.99% | -0.83 pp |
+| 44 | same technique / other intensity | 56.95% | 94.92% | +37.97 pp | 1.17% | 1.17% | +0.00 pp |
+| 44 | unseen 15 techniques | 73.11% | 87.24% | +14.13 pp | 1.31% | 0.72% | -0.59 pp |
+
+Recall increased after augmentation in all three groups for both repeated seeds.
+
+In particular, the unseen 15-technique group improved in both seeds:
+
+- seed 43: 71.75% -> 89.29% (+17.54 pp)
+- seed 44: 73.11% -> 87.24% (+14.13 pp)
+
+The same-technique/different-intensity group also showed large gains:
+
+- seed 43: 57.80% -> 93.73% (+35.93 pp)
+- seed 44: 56.95% -> 94.92% (+37.97 pp)
+
+These are interim results from seeds 43 and 44 only.
+They are therefore interpreted as a consistent direction of improvement across the two repeated seeds,
+not yet as a final three-seed generalization result.
+
+Seed 42 will be added using the same grouping rule before the final paper table is produced.
