@@ -191,3 +191,104 @@ The main comparison requires evaluation on the clean and 17-technique obfuscated
 - [ ] KoELECTRA Original/Augmented KoreanGuardrail evaluation
 - [ ] Original vs Augmented paired/statistical comparison
 
+
+---
+
+## 2026-10-05 — KoELECTRA Seeds 43/44 Repeated Runs
+
+### 1. Purpose
+
+To check whether the Step 1 result depends on a single random seed,
+KoELECTRA Original and Augmented training were repeated with seeds 43 and 44.
+
+The training configuration was identical to seed 42 except for the random seed.
+
+- Model: `monologg/koelectra-base-v3-discriminator`
+- Original train rows: 4,809
+- Augmented train rows: 14,377
+- Validation rows: 604
+- Epochs: 3
+- Batch size: 16
+- Learning rate: 2e-5
+- Weight decay: 0.01
+- Max length: 128
+- FP16: enabled
+- Best-model selection: validation F1
+
+Seed-specific outputs are stored under:
+
+- `results/step1_seeds/koelectra/seed43/`
+- `results/step1_seeds/koelectra/seed44/`
+
+### 2. Validation summary
+
+| Seed | Training | Best epoch | Validation F1 |
+| ---: | --- | ---: | ---: |
+| 43 | Original | 2 | 0.9866 |
+| 43 | Augmented | 3 | 0.9900 |
+| 44 | Original | 1 | 0.9900 |
+| 44 | Augmented | 3 | 0.9884 |
+
+All four runs achieved approximately 0.99 validation F1.
+Therefore, clean validation performance alone is not sufficient to evaluate robustness to obfuscation.
+
+### 3. Seed 43 evaluation
+
+For obfuscated evaluations, the main result uses only rows with `changed=true`.
+
+| Evaluation | Training | Accuracy | Attack Recall | F1 | Benign FPR |
+| --- | --- | ---: | ---: | ---: | ---: |
+| clean | Original | 0.9818 | 0.9767 | 0.9816 | 0.0132 |
+| clean | Augmented | 0.9868 | 0.9867 | 0.9867 | 0.0132 |
+| kg_clean | Original | 0.7674 | 0.6481 | 0.7778 | 0.0312 |
+| kg_clean | Augmented | 0.7733 | 0.6944 | 0.7937 | 0.0938 |
+| obfuscated | Original | 0.8565 | 0.7179 | 0.8326 | 0.0065 |
+| obfuscated | Augmented | 0.9444 | 0.9005 | 0.9416 | 0.0121 |
+| kg_obfuscated | Original | 0.5988 | 0.3853 | 0.5483 | 0.0348 |
+| kg_obfuscated | Augmented | 0.6671 | 0.5196 | 0.6636 | 0.0795 |
+
+Main obfuscated-test Recall improved from 71.79% to 90.05% (+18.26 percentage points).
+
+### 4. Seed 44 evaluation
+
+| Evaluation | Training | Accuracy | Attack Recall | F1 | Benign FPR |
+| --- | --- | ---: | ---: | ---: | ---: |
+| clean | Original | 0.9851 | 0.9967 | 0.9852 | 0.0263 |
+| clean | Augmented | 0.9934 | 0.9933 | 0.9933 | 0.0066 |
+| kg_clean | Original | 0.9070 | 0.9167 | 0.9252 | 0.1094 |
+| kg_clean | Augmented | 0.7674 | 0.6759 | 0.7849 | 0.0781 |
+| obfuscated | Original | 0.8606 | 0.7330 | 0.8394 | 0.0133 |
+| obfuscated | Augmented | 0.9380 | 0.8830 | 0.9341 | 0.0076 |
+| kg_obfuscated | Original | 0.6678 | 0.5190 | 0.6638 | 0.0767 |
+| kg_obfuscated | Augmented | 0.6454 | 0.4791 | 0.6306 | 0.0690 |
+
+Main obfuscated-test Recall improved from 73.30% to 88.30% (+15.00 percentage points).
+
+### 5. Interim interpretation
+
+The general obfuscated test showed the same direction of improvement for both repeated seeds:
+
+- Seed 43: 71.79% -> 90.05% (+18.26 pp)
+- Seed 44: 73.30% -> 88.30% (+15.00 pp)
+
+This provides preliminary evidence that training augmentation with
+`yamin_swap` 0.7 and `symbol_insert` 0.3 improves KoELECTRA attack Recall
+on the general obfuscated evaluation set.
+
+The KoreanGuardrail supplementary evaluations were not consistent across seeds.
+Therefore, conclusions for `kg_clean` and `kg_obfuscated` are deferred until
+seed 42 and the three-seed statistics, including AUROC, are available.
+
+### 6. Remaining work
+
+- [x] Seed 43 Original/Augmented training
+- [x] Seed 43 four evaluation sets
+- [x] Seed 44 Original/Augmented training
+- [x] Seed 44 four evaluation sets
+- [ ] Seed 42 remaining seven evaluations
+- [ ] Three-seed mean and standard deviation
+- [ ] AUROC aggregation
+- [ ] Technique/group-level comparison
+- [ ] Final Step 1 comparison table
+
+Raw data, model checkpoints, and prediction-level outputs are not committed to the repository.
