@@ -201,3 +201,143 @@ Clean 테스트셋과 17종 난독화 테스트셋에서
 - [ ] KoELECTRA 증강 모델 난독화 테스트
 - [ ] KoELECTRA 원본/증강 모델 KoreanGuardrail 평가
 - [ ] 원본 모델과 증강 모델의 paired/statistical 비교
+
+---
+
+## 2026-10-05 — KoELECTRA Seed 43/44 반복 실험
+
+### 1. 목적
+
+기본 실험 seed 42의 결과가 특정 초기화에 의존하는지 확인하고,
+mDeBERTa와 동일한 3-seed 기준(seed 42, 43, 44)으로 비교하기 위해
+KoELECTRA Original/Augmented 모델을 seed 43, 44에서 추가 학습하였다.
+
+학습 설정은 seed를 제외하고 기존 seed 42 실험과 동일하다.
+
+- 모델: `monologg/koelectra-base-v3-discriminator`
+- Epoch 수: 3
+- Batch size: 16
+- Learning rate: 2e-5
+- Weight decay: 0.01
+- Max length: 128
+- FP16: 사용
+- 최적 모델 선정 기준: validation F1
+- Original train: 4,809건
+- Augmented train: 14,377건
+- Validation: 604건
+
+seed 43, 44 결과는 다음 경로에 저장하였다.
+
+- `results/step1_seeds/koelectra/seed43/`
+- `results/step1_seeds/koelectra/seed44/`
+
+### 2. 학습 및 검증 결과
+
+| Seed | 학습 방식 | Best epoch | Accuracy | Attack Recall | F1 | Benign FPR |
+| ---: | --- | ---: | ---: | ---: | ---: | ---: |
+| 43 | Original | 2 | 0.9868 | 0.9833 | 0.9866 | 0.0099 |
+| 43 | Augmented | 3 | 0.9901 | 0.9900 | 0.9900 | 0.0099 |
+| 44 | Original | 1 | 0.9901 | 0.9933 | 0.9900 | 0.0132 |
+| 44 | Augmented | 3 | 0.9884 | 0.9933 | 0.9884 | 0.0164 |
+
+validation F1은 네 모델 모두 약 0.99 수준으로 높아,
+validation 성능만으로 난독화 강건성 차이를 판단하기는 어렵다.
+
+### 3. Seed 43 평가 결과
+
+난독화 평가는 팀 기준에 따라 `changed=true` 행만 주 결과로 사용하였다.
+
+| 평가 | 학습 방식 | Accuracy | Attack Recall | F1 | Benign FPR |
+| --- | --- | ---: | ---: | ---: | ---: |
+| clean | Original | 0.9818 | 0.9767 | 0.9816 | 0.0132 |
+| clean | Augmented | 0.9868 | 0.9867 | 0.9867 | 0.0132 |
+| kg_clean | Original | 0.7674 | 0.6481 | 0.7778 | 0.0312 |
+| kg_clean | Augmented | 0.7733 | 0.6944 | 0.7937 | 0.0938 |
+| obfuscated | Original | 0.8565 | 0.7179 | 0.8326 | 0.0065 |
+| obfuscated | Augmented | 0.9444 | 0.9005 | 0.9416 | 0.0121 |
+| kg_obfuscated | Original | 0.5988 | 0.3853 | 0.5483 | 0.0348 |
+| kg_obfuscated | Augmented | 0.6671 | 0.5196 | 0.6636 | 0.0795 |
+
+주요 변화:
+
+- clean Recall: 97.67% → 98.67% (+1.00%p)
+- kg_clean Recall: 64.81% → 69.44% (+4.63%p)
+- obfuscated Recall: 71.79% → 90.05% (**+18.26%p**)
+- kg_obfuscated Recall: 38.53% → 51.96% (+13.43%p)
+
+seed 43에서는 증강 후 일반 난독화 평가의 Recall이 크게 상승하였다.
+다만 kg 계열에서는 Recall 상승과 함께 FPR도 증가하였다.
+
+### 4. Seed 44 평가 결과
+
+| 평가 | 학습 방식 | Accuracy | Attack Recall | F1 | Benign FPR |
+| --- | --- | ---: | ---: | ---: | ---: |
+| clean | Original | 0.9851 | 0.9967 | 0.9852 | 0.0263 |
+| clean | Augmented | 0.9934 | 0.9933 | 0.9933 | 0.0066 |
+| kg_clean | Original | 0.9070 | 0.9167 | 0.9252 | 0.1094 |
+| kg_clean | Augmented | 0.7674 | 0.6759 | 0.7849 | 0.0781 |
+| obfuscated | Original | 0.8606 | 0.7330 | 0.8394 | 0.0133 |
+| obfuscated | Augmented | 0.9380 | 0.8830 | 0.9341 | 0.0076 |
+| kg_obfuscated | Original | 0.6678 | 0.5190 | 0.6638 | 0.0767 |
+| kg_obfuscated | Augmented | 0.6454 | 0.4791 | 0.6306 | 0.0690 |
+
+주요 변화:
+
+- clean Recall: 99.67% → 99.33% (-0.34%p)
+- kg_clean Recall: 91.67% → 67.59% (-24.08%p)
+- obfuscated Recall: 73.30% → 88.30% (**+15.00%p**)
+- kg_obfuscated Recall: 51.90% → 47.91% (-3.99%p)
+
+seed 44에서도 일반 난독화 평가의 Recall은 증강 후 크게 상승하였다.
+반면 kg 계열은 seed 43과 증감 방향이 일치하지 않았다.
+
+### 5. 현재까지의 관찰
+
+seed 43과 44 모두 `obfuscated_test`에서는 증강 학습 후 Recall이 같은 방향으로 상승하였다.
+
+- seed 43: 71.79% → 90.05% (+18.26%p)
+- seed 44: 73.30% → 88.30% (+15.00%p)
+
+따라서 현재까지는 `yamin_swap 0.7`과 `symbol_insert 0.3`을 이용한
+증강 학습이 일반 난독화 평가에서 KoELECTRA의 공격 탐지 Recall을 높이는 경향이 관찰된다.
+
+반면 `kg_clean`과 `kg_obfuscated`는 seed에 따라 증강 효과의 방향이 달라졌다.
+따라서 KoreanGuardrail 기반 보조 평가에 대해서는 단일 seed 결과로 결론을 내리지 않고,
+seed 42까지 포함한 3-seed 결과와 AUROC를 함께 확인한 뒤 최종 해석한다.
+
+### 6. 현재 진행 상태
+
+- [x] KoELECTRA seed 43 Original 학습
+- [x] KoELECTRA seed 43 Augmented 학습
+- [x] KoELECTRA seed 43 평가 4종
+- [x] KoELECTRA seed 44 Original 학습
+- [x] KoELECTRA seed 44 Augmented 학습
+- [x] KoELECTRA seed 44 평가 4종
+- [ ] KoELECTRA seed 42 나머지 7개 평가
+- [ ] seed 42/43/44 3-seed 평균 및 표준편차
+- [ ] AUROC 계산
+- [ ] 기법 그룹별 비교
+- [ ] mDeBERTa와 동일 형식의 표 2 최종 정리
+
+seed 42의 Original/Augmented `best_model`은 후속 평가를 위해 팀원에게 공유하였다.
+
+### 7. 결과 파일
+
+seed 43, 44의 평가 결과는 각각 아래에 저장되어 있다.
+
+`results/step1_seeds/koelectra/seed{43,44}/{original,augmented}/eval/`
+
+각 평가 폴더에는:
+
+- `metrics.json`
+- `predictions.csv`
+
+가 저장되어 있으며, 난독화 평가에는 추가로:
+
+- `analysis/obfuscated_overall.csv`
+- `analysis/obfuscated_by_technique.csv`
+- `analysis/obfuscated_by_cell.csv`
+
+가 생성되었다.
+
+데이터, 모델, prediction 결과는 저장소에 커밋하지 않고 로컬/서버에서만 관리한다.
