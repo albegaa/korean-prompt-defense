@@ -333,3 +333,115 @@ They are therefore interpreted as a consistent direction of improvement across t
 not yet as a final three-seed generalization result.
 
 Seed 42 will be added using the same grouping rule before the final paper table is produced.
+
+---
+
+## 2026-10-06 — KoELECTRA Final Three-Seed Analysis
+
+### 1. Completion of seed 42 evaluation
+
+The remaining seed 42 evaluations were completed using the shared
+KoELECTRA Original and Augmented best-model checkpoints.
+
+The Original clean evaluation was independently reproduced and exactly matched
+the previous result:
+
+- TP: 299
+- TN: 300
+- FP: 4
+- FN: 1
+- F1: 0.9917
+
+Results are therefore available for seeds 42, 43, and 44 under the same
+four evaluation conditions.
+
+For obfuscated evaluations, only rows with `changed=true` are used as the
+main analysis set.
+
+### 2. Three-seed summary
+
+Values in parentheses are sample standard deviations across seeds 42, 43, and 44.
+
+| Evaluation | Training | Recall | FPR | F1 | AUROC |
+| --- | --- | ---: | ---: | ---: | ---: |
+| clean | Original | 99.00 (1.15) | 1.75 (0.76) | 98.62 (0.51) | 0.9986 (0.0009) |
+| clean | Augmented | 98.67 (0.67) | 0.88 (0.38) | 98.89 (0.39) | 0.9970 (0.0017) |
+| obfuscated | Original | 72.06 (1.13) | 0.88 (0.40) | 83.33 (0.58) | 0.9768 (0.0022) |
+| obfuscated | Augmented | **87.71 (2.68)** | 0.87 (0.31) | **93.01 (1.40)** | **0.9919 (0.0010)** |
+| kg_clean | Original | 78.09 (13.43) | 7.81 (4.13) | 85.05 (7.37) | 0.9428 (0.0036) |
+| kg_clean | Augmented | 67.59 (1.85) | 8.33 (0.90) | 78.34 (1.10) | 0.9144 (0.0082) |
+| kg_obfuscated | Original | 44.66 (6.75) | 5.38 (2.12) | 60.23 (5.82) | 0.8704 (0.0154) |
+| kg_obfuscated | Augmented | 48.34 (3.42) | 7.05 (0.84) | 63.37 (2.85) | 0.8635 (0.0064) |
+
+On the general obfuscated evaluation, Recall increased from 72.06% to 87.71%,
+an average improvement of 15.65 percentage points.
+
+The per-seed Recall changes were:
+
+- seed 42: 71.09% -> 84.79% (+13.70 pp)
+- seed 43: 71.79% -> 90.05% (+18.26 pp)
+- seed 44: 73.30% -> 88.30% (+15.00 pp)
+
+All three seeds showed the same direction of improvement.
+
+At the same time, mean obfuscated FPR did not increase
+(0.88% -> 0.87%).
+
+The clean Recall decrease observed in seed 42 was not consistent across seeds.
+The three-seed mean changed only from 99.00% to 98.67%.
+
+### 3. Final technique-group analysis
+
+The 34 technique-by-intensity cells in `obfuscated_test` were divided into:
+
+- trained technique / same intensity: 2 cells
+- same technique / different intensity: 2 cells
+- unseen techniques: 30 cells (15 techniques × 2 intensities)
+
+Recall and FPR were first calculated for each cell and then averaged within
+each group.
+
+| Group | Training | Recall (mean ± SD) | FPR (mean ± SD) |
+| --- | --- | ---: | ---: |
+| trained / same intensity | Original | 89.82 ± 3.13 | 1.21 ± 0.67 |
+| trained / same intensity | Augmented | **96.83 ± 1.30** | 0.88 ± 0.50 |
+| same technique / other intensity | Original | 59.35 ± 2.29 | 1.01 ± 0.29 |
+| same technique / other intensity | Augmented | **92.09 ± 4.04** | 1.49 ± 1.03 |
+| unseen 30 cells | Original | 72.27 ± 1.33 | 0.85 ± 0.41 |
+| unseen 30 cells | Augmented | **87.04 ± 2.68** | 0.82 ± 0.24 |
+
+For the 30 cells belonging to techniques that were not used for augmentation,
+Recall increased from 72.27% to 87.04% (+14.77 pp).
+
+The improvement therefore was not limited to the two augmentation cells:
+the same direction was also observed for different intensities of the trained
+techniques and for unseen techniques.
+
+### 4. Comparison with mDeBERTa
+
+mDeBERTa showed the same overall direction:
+its three-seed mean obfuscated Recall increased from 78.1% to 91.3%.
+
+KoELECTRA increased from 72.06% to 87.71%.
+
+Thus, augmentation improved general obfuscated-input detection in both
+classifier architectures.
+
+In contrast, `kg_clean` and `kg_obfuscated` showed substantial seed variation
+and inconsistent Original-to-Augmented changes. No firm augmentation effect is
+therefore claimed for the supplementary KoreanGuardrail evaluation sets.
+
+### 5. Final status
+
+- [x] KoELECTRA seeds 42/43/44 Original training
+- [x] KoELECTRA seeds 42/43/44 Augmented training
+- [x] Four evaluation sets for all three seeds
+- [x] Three-seed mean and standard deviation
+- [x] AUROC analysis
+- [x] Final technique-group comparison
+- [x] Comparison under the same framework as mDeBERTa
+- [ ] Final KSC Table 2 formatting
+- [ ] Final KSC Section 4.3 text
+
+Raw data, model checkpoints, and prediction-level outputs containing source text
+are not committed to the public repository.
